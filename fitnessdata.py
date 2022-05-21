@@ -29,15 +29,15 @@ class sleep_record:
         self.reason = r
 
 class fitnessdata:
-    def __init__(self):
-        self.authdata = self.auth_data()
+    def __init__(self, user_name):
+        self.authdata = self.auth_data(user_name)
         return
 
     def get_transaction_cal(self, start_date, end_date):
         ret = []
         START = int(time.mktime(start_date.timetuple())*1000000000)
         # カロリーデータ集計を取得
-        self.cal_data_raw = self.retrieve_data(self.authdata, start_date, end_date, "cal")
+        self.cal_data_raw = self.retrieve_data(start_date, end_date, "cal")
         if self.cal_data_raw["bucket"][0]["dataset"][0]["point"]==[]:
             return ret   # データ無いね
         for dataset in self.cal_data_raw["bucket"]:
@@ -57,7 +57,7 @@ class fitnessdata:
     def get_transaction_sleep(self, start_date, end_date):
         ret = []
         START = int(time.mktime(start_date.timetuple())*1000000000)
-        self.sleep_data_raw = self.retrieve_data(self.authdata, start_date, end_date, "sleep_post")
+        self.sleep_data_raw = self.retrieve_data(start_date, end_date, "sleep_post")
         # 睡眠データ集計を取得
         if self.sleep_data_raw["bucket"]==[]:
             return ret   # データ無いね
@@ -86,8 +86,8 @@ class fitnessdata:
                 if reason != "":
                     ret.append(
                         sleep_record(
-                            int(point["startTimeNanos"]) / 1000000000 ,
-                            int(point["endTimeNanos"]) / 1000000000,
+                            int(int(point["startTimeNanos"]) / 1000000000) ,
+                            int(int(point["endTimeNanos"]) / 1000000000),
                             reason,
                             )
                     )
@@ -96,7 +96,7 @@ class fitnessdata:
 
     def get_transaction_sleep_session(self, start_date, end_date):
         ret = []
-        self.sleep_session_data_raw = self.retrieve_data(self.authdata, start_date, end_date, "sleep_session")
+        self.sleep_session_data_raw = self.retrieve_data(start_date, end_date, "sleep_session")
         # 睡眠データ集計を取得
         if self.sleep_session_data_raw["session"]==[]:
             return ret   # データ無いね
@@ -119,7 +119,7 @@ class fitnessdata:
     def get_transaction_steps(self, start_date, end_date):
         ret = []
         START = int(time.mktime(start_date.timetuple())*1000000000)
-        self.steps_data_raw = self.retrieve_data(self.authdata, start_date, end_date, "steps")
+        self.steps_data_raw = self.retrieve_data(start_date, end_date, "steps")
         # 睡眠データ集計を取得
         if self.steps_data_raw["bucket"][0]["dataset"][0]["point"]==[]:
             return ret   # データ無いね
@@ -128,8 +128,8 @@ class fitnessdata:
             if int(point["startTimeNanos"]) >= START:
                 ret.append(
                     step_record(
-                        int(point["startTimeNanos"]) / 1000000000 ,
-                        int(point["endTimeNanos"]) / 1000000000,
+                        int(int(point["startTimeNanos"]) / 1000000000) ,
+                        int(int(point["endTimeNanos"]) / 1000000000),
                         point['value'][0]['intVal'],
                         )
                 )
@@ -163,10 +163,11 @@ class fitnessdata:
     REDIRECT_URI = 'urn:ietf:wg:oauth:2.0:oob'
     CREDENTIALS_FILE = "./credentials"
 
-    def auth_data(self):
+    def auth_data(self, user_name):
         credentials = ""
-        if os.path.exists(self.CREDENTIALS_FILE):
-            credentials = Storage(self.CREDENTIALS_FILE).get()
+        self.file_name = self.CREDENTIALS_FILE + user_name
+        if os.path.exists(self.file_name):
+            credentials = Storage(self.file_name).get()
         else:
             flow = flow_from_clientsecrets(
                 # API有効化時に取得したOAuth用のJSONファイルを指定
@@ -183,8 +184,8 @@ class fitnessdata:
             code = input('Codeを入力してください: ').strip()
             credentials = flow.step2_exchange(code)
 
-            if not os.path.exists(self.CREDENTIALS_FILE):
-                Storage(self.CREDENTIALS_FILE).put(credentials)
+            if not os.path.exists(self.file_name):
+                Storage(self.file_name).put(credentials)
 
         # Create an httplib2.Http object and authorize it with our credentials
         http = httplib2.Http()
@@ -195,7 +196,7 @@ class fitnessdata:
         return fitness_service
 
 
-    def retrieve_data(self, fitness_service, start_date, end_date, index):
+    def retrieve_data(self, start_date, end_date, index):
         START = int(time.mktime(start_date.timetuple())*1000000000)
         NEXT = int(time.mktime(end_date.timetuple())*1000000000)
         data_set = "%s-%s" % (START, NEXT)
@@ -209,12 +210,12 @@ class fitnessdata:
                 "startTimeMillis": str(int(time.mktime(start_date.timetuple())) * 1000),
                 "endTimeMillis": str(int(time.mktime(end_date.timetuple())) * 1000)
                 }
-            ret = fitness_service.users().dataset().aggregate(userId='me', body=body).execute()
+            ret = self.authdata.users().dataset().aggregate(userId='me', body=body).execute()
         elif index=="sleep":
             # google API のリファレンスドキュメントだとどこに書いてあるのかよくわからんのだけど、下記の stackoverflow のトピックに書いてあったやりかた
             # https://stackoverflow.com/questions/64820336/huawei-watch-2-sleep-sessions-are-not-in-google-fit-api-sleep-endpoint
             # まじうんこ
-            ret = fitness_service.users().dataSources().datasets().get(userId='me', dataSourceId=self.DATA_SOURCE[index], datasetId=data_set).execute()
+            ret = self.authdata.users().dataSources().datasets().get(userId='me', dataSourceId=self.DATA_SOURCE[index], datasetId=data_set).execute()
         elif index=="sleep_post":
             # https://developers.google.com/fit/scenarios/read-sleep-data
             # 2.To obtain details of sleep stages for each session (if present), use the following request for each session in the filtered list:
@@ -230,7 +231,7 @@ class fitnessdata:
             "startTimeMillis": str(int(time.mktime(start_date.timetuple())) * 1000),
             "endTimeMillis": str(int(time.mktime(end_date.timetuple())) * 1000)
             }
-            ret = fitness_service.users().dataset().aggregate(userId='me', body=body).execute()
+            ret = self.authdata.users().dataset().aggregate(userId='me', body=body).execute()
         elif index=="sleep_session":
             # セッションアクティビティごとの処理
             # https://developers.google.com/fit/scenarios/read-sleep-data
@@ -238,7 +239,7 @@ class fitnessdata:
             # に則ったやりかたはこちら？
             starttime = start_date.isoformat("T") + "Z"
             endtime = end_date.isoformat("T") + "Z"
-            ret = fitness_service.users().sessions().list(userId='me',activityType=72, fields='session',startTime=starttime,endTime=endtime).execute()
+            ret = self.authdata.users().sessions().list(userId='me',activityType=72, fields='session',startTime=starttime,endTime=endtime).execute()
         elif index=="steps":
             # https://developers.google.com/fit/scenarios/read-daily-step-total
             # に則ったやりかた
@@ -250,9 +251,9 @@ class fitnessdata:
             "startTimeMillis": str(int(time.mktime(start_date.timetuple())) * 1000),
             "endTimeMillis": str(int(time.mktime(end_date.timetuple())) * 1000)
             }
-            ret = fitness_service.users().dataset().aggregate(userId='me', body=body).execute()
+            ret = self.authdata.users().dataset().aggregate(userId='me', body=body).execute()
         else:
-            ret = fitness_service.users().dataSources(). \
+            ret = self.authdata.users().dataSources(). \
                 datasets(). \
                 get(userId='me', dataSourceId=self.DATA_SOURCE[index], datasetId=data_set). \
                 execute()
