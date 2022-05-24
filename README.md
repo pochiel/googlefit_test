@@ -79,3 +79,7 @@ https://keinumata.hatenablog.com/entry/2018/05/08/122348
 ハンドラを立ち上げ、応答するような使い方を想定している。（普通はそうだよね）
 だけど、このシステムは定期的に動いて一方的にメッセージを送りつけるだけなのでそんなのいらないはずだ。
 Herokuとか使わなくても、ラズパイで十分動かせるはず。
+
+# Herokuに登録
+Heroku scheduler を使うんじゃ
+https://hashikake.com/heroku-scheculer
