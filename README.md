@@ -68,3 +68,14 @@ https://developers.google.com/oauthplayground/
 * Exchange authorization うんちゃらボタンを押す
 * 
 
+# Line Bot としてメッセージを送りたい
+https://qiita.com/kro/items/67f7510b36945eb9689b
+
+https://first-contact.jp/blog/article/linebot/
+
+https://keinumata.hatenablog.com/entry/2018/05/08/122348
+
+この辺のプログラムは bot宛のメッセージを受信したとき LINE 側が WebHook してくれるのをキャッチして
+ハンドラを立ち上げ、応答するような使い方を想定している。（普通はそうだよね）
+だけど、このシステムは定期的に動いて一方的にメッセージを送りつけるだけなのでそんなのいらないはずだ。
+Herokuとか使わなくても、ラズパイで十分動かせるはず。
