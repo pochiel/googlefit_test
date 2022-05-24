@@ -171,7 +171,7 @@ class fitnessdata:
         else:
             flow = flow_from_clientsecrets(
                 # API有効化時に取得したOAuth用のJSONファイルを指定
-                './oauth2.json',
+                './google-credentials.json',
                 # スコープを指定
                 scope=self.OAUTH_SCOPE,
                 # ユーザーの認証後の、トークン受け取り方法を指定（後述）
