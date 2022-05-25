@@ -84,5 +84,7 @@ Herokuとか使わなくても、ラズパイで十分動かせるはず。
 Heroku scheduler を使うんじゃ
 https://hashikake.com/heroku-scheculer
 
+　→Herokuで使うのはあきらめました。
+
 # OAUTH2 を環境変数に逃がす方法
 https://jablogs.com/detail/11808
