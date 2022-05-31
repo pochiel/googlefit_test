@@ -21,4 +21,4 @@ class lineIF:
         self.line_bot_api = LineBotApi(self.YOUR_CHANNEL_ACCESS_TOKEN)
 
     def send_message(self, message):
-        self.line_bot_api.push_message(self.YOUR_USER_ID, messages=TextSendMessage(text=message))
+        self.line_bot_api.broadcast(messages=TextSendMessage(text=message))
